@@ -280,6 +280,8 @@ pub struct App {
     recent_changed: bool,
     /// A dialog for the shell to show.
     file_request: Option<FileRequest>,
+    #[cfg(target_arch = "wasm32")]
+    web_save: bool,
     /// The unsaved-changes prompt, and what follows it.
     prompt: Option<files::Then>,
     /// What follows a Save As started from the prompt.
@@ -315,6 +317,9 @@ pub struct App {
     import_report: Option<(String, projectcraft_engine::interchange::ImportReport)>,
 }
 
+#[cfg(target_arch = "wasm32")]
+mod web_files;
+
 const ROW_H: f32 = 22.0;
 /// The ID column: room for five digits.
 const ID_W: f32 = 40.0;
@@ -344,6 +349,8 @@ impl App {
             recent: Vec::new(),
             recent_changed: false,
             file_request: None,
+            #[cfg(target_arch = "wasm32")]
+            web_save: false,
             prompt: None,
             after_save: None,
             closing: false,

@@ -261,6 +261,12 @@ impl App {
 
     /// Save: to the project's file, or through Save As when it has none.
     pub(crate) fn save(&mut self) -> bool {
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.web_save = true;
+            false
+        }
+        #[cfg(not(target_arch = "wasm32"))]
         match self.path.clone() {
             Some(p) => self.save_to(&p),
             None => {
@@ -272,6 +278,11 @@ impl App {
 
     /// Opening another file or closing: asks first when there are unsaved changes.
     pub(crate) fn request(&mut self, then: Then) {
+        #[cfg(target_arch = "wasm32")]
+        if matches!(then, Then::Open(None)) {
+            self.file_request = Some(FileRequest::Open);
+            return;
+        }
         if self.is_dirty() {
             self.prompt = Some(then);
         } else {

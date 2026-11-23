@@ -9,10 +9,19 @@ description = "ProjectCraft desktop app"
 [lints]
 workspace = true
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 projectcraft-engine = { workspace = true }
 projectcraft-ui-egui = { workspace = true }
 eframe = { workspace = true, features = ["default_fonts", "wgpu", "accesskit", "wayland", "x11"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# The same futures adapter eframe already uses. wasm-bindgen's async export names it directly.
+wasm-bindgen-futures = "=0.4.79"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # Open / Save As dialogs (xdg-desktop-portal on Linux and the BSDs). Waited for on a thread
 # with a small std-only `block_on` (src/dialogs.rs), so no async runtime is added.
 rfd = { workspace = true }

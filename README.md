@@ -33,6 +33,23 @@ projectcraft-cli commands
 
 **Everything CI runs:** `cargo xtask ci` (formatting, clippy with warnings as errors, the tests, the rescheduling speed gate in release, asset attribution, crate layering, the wasm build, and `cargo deny` for advisories, licences and sources once `cargo install cargo-deny --locked` has run).
 
+## Browser build
+
+The WebOS editor uses the same task sheet, Gantt chart, scheduler and
+`.projectcraft` files as the desktop editor. It runs on browsers with
+WebAssembly and WebGPU. Open, Save, Save As and Export use the WebOS Files
+picker.
+
+```sh
+cargo build --locked --release --lib --target wasm32-unknown-unknown -p projectcraft
+wasm-bindgen --target web --no-typescript --out-dir web-build \
+  "${CARGO_TARGET_DIR:-target}/wasm32-unknown-unknown/release/projectcraft.wasm"
+```
+
+Use wasm-bindgen CLI 0.2.129, which matches the lockfile. The generated
+`WebHandle` starts the app on a canvas and exposes file requests and
+versioned project bytes to the host.
+
 ## How it is put together
 | Layer | Crates | Job |
 |---|---|---|

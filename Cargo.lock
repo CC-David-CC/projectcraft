@@ -2565,6 +2565,7 @@ dependencies = [
  "projectcraft-ui-egui",
  "rfd",
  "serde_json",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
