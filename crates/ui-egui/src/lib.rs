@@ -478,7 +478,7 @@ impl App {
         self.sheet_keys(&ctx);
 
         egui::Panel::top("toolbar").show(ui, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 self.file_menu(ui);
                 ui.menu_button(tl!("Project"), |ui| {
                     if ui.button(tl!("Change Working Time…")).clicked() {
@@ -491,7 +491,7 @@ impl App {
                 self.view_menu(ui);
                 self.resource_menu(ui);
                 ui.separator();
-                ui.heading(&self.session.project.name);
+                ui.add(egui::Label::new(egui::RichText::new(&self.session.project.name).heading()).truncate());
                 ui.separator();
                 if self.view == View::ResourceSheet {
                     if ui.button(tl!("New Resource")).clicked() {
@@ -1796,6 +1796,22 @@ mod tests {
     fn picked(h: &Harness<'static, App>) -> Vec<u32> {
         let app = h.state();
         app.sel.ids(&app.order()).iter().map(|t| t.0).collect()
+    }
+
+    #[test]
+    fn project_toolbar_fits_a_narrow_window() {
+        let width = 336.0;
+        let mut session = projectcraft_engine::sample();
+        session.project.name = "Infrastructure renewal ".repeat(8);
+        let mut h = Harness::builder().with_size(egui::vec2(width, 720.0)).build_ui_state(|ui, app: &mut App| app.ui(ui), App::new(session, None));
+        h.run_steps(3);
+        for name in ["File", "New Task", "Open", "Save"] {
+            let bounds = h.get_by_label(name).rect();
+            assert!(bounds.left() >= 0.0 && bounds.right() <= width, "{name} is clipped: {bounds:?}");
+        }
+        let task_count = order(&h).len();
+        click(&mut h, "New Task", Modifiers::NONE);
+        assert_eq!(order(&h).len(), task_count + 1);
     }
 
     #[test]
