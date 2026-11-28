@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Last reviewed:** 2026-10-17 · **Last updated:** 2026-11-25 · **Change list:** Toolbar layout in narrow windows · **Target:** Microsoft Project (desktop)
+> **Last reviewed:** 2026-10-17 · **Last updated:** 2026-11-28 · **Change list:** Import Report layout in narrow windows · **Target:** Microsoft Project (desktop)
 
 ProjectCraft aims for parity with Microsoft Project's scheduling, as its documentation describes it. Each roadmap milestone has a pass/fail checklist; it is reached when every item passes.
 
@@ -82,6 +82,7 @@ Import gaps, until later work closes them (each is a line in the import report):
 ## Progress log
 | Date | What landed |
 |---|---|
+| 2026-11-28 | projectcraft-import-report-width: The Import Report fits narrow windows, wraps its columns, and keeps Copy Report and Close reachable. |
 | 2026-11-25 | WEBOS-23: The project toolbar wraps in narrow windows so Open, Save and New Task remain reachable. |
 | 2026-11-23 | WEBOS-23: WebAssembly app entry for the native task sheet and Gantt editor. The browser host picks files and confirms saves while ProjectCraft owns versioned project bytes and scheduling. |
 | 2026-10-15 | M0: repository set up; scheduler, engine, Gantt view, CLI |
@@ -150,6 +151,7 @@ Import gaps, until later work closes them (each is a line in the import report):
 ## Revision history
 | Date | Change | Summary |
 |---|---|---|
+| 2026-11-28 | minor | Import Report layout in narrow windows |
 | 2026-10-15 | major | First version |
 | 2026-10-16 | minor | M1 progress; status line, headline numbers and revision history as MailCraft; links to private planning docs removed |
 | 2026-10-16 | minor | Security hardening in the progress log |

@@ -15,8 +15,16 @@ pub(crate) fn file_name(path: &Path) -> String {
     path.file_name().map_or_else(|| path.display().to_string(), |n| n.to_string_lossy().into_owned())
 }
 
-const WHERE_W: f32 = 190.0;
-const WHY_W: f32 = 300.0;
+const MAX_REPORT_WIDTH: f32 = 760.0;
+const VIEWPORT_GUTTER: f32 = 8.0;
+const COLUMN_GAP: f32 = 12.0;
+
+fn report_cell(ui: &mut egui::Ui, width: f32, text: impl Into<egui::WidgetText>) {
+    ui.scope(|ui| {
+        ui.set_width(width);
+        ui.add(Label::new(text).wrap());
+    });
+}
 
 impl App {
     /// The import report that shows now, if any: the imported file's name and its report.
@@ -29,8 +37,10 @@ impl App {
         let Some((file, report)) = self.import_report.as_ref() else { return };
         let t = Tokens::get(ctx);
         let mut close = false;
-        let modal = egui::Modal::new(egui::Id::new("import-report")).show(ctx, |ui| {
-            ui.set_width(760.0);
+        let frame = egui::Frame::popup(&ctx.global_style());
+        let width = (ctx.content_rect().width() - frame.total_margin().sum().x - 2.0 * VIEWPORT_GUTTER).clamp(1.0, MAX_REPORT_WIDTH);
+        let modal = egui::Modal::new(egui::Id::new("import-report")).frame(frame).show(ctx, |ui| {
+            ui.set_width(width);
             ui.heading(tl!("Import Report"));
             ui.label(i18n::fmt(
                 tl!("{file}: {tasks} tasks imported as a new, untitled project. ProjectCraft worked out every date; none were taken from the file."),
@@ -46,9 +56,11 @@ impl App {
                 );
                 ui.add_space(4.0);
                 egui::ScrollArea::vertical().max_height(380.0).auto_shrink([false, true]).show(ui, |ui| {
-                    egui::Grid::new("import-report-lines").striped(true).num_columns(4).spacing([12.0, 6.0]).show(ui, |ui| {
-                        for h in [tl!("Result"), tl!("Feature"), tl!("Where"), tl!("Why")] {
-                            ui.label(RichText::new(h).strong());
+                    let column_space = (ui.available_width() - 3.0 * COLUMN_GAP).max(1.0);
+                    let [result, feature, place, reason] = [0.15, 0.23, 0.25, 0.37].map(|share| column_space * share);
+                    egui::Grid::new("import-report-lines").striped(true).num_columns(4).spacing([COLUMN_GAP, 6.0]).show(ui, |ui| {
+                        for (heading, width) in [(tl!("Result"), result), (tl!("Feature"), feature), (tl!("Where"), place), (tl!("Why"), reason)] {
+                            report_cell(ui, width, RichText::new(heading).strong());
                         }
                         ui.end_row();
                         for l in &report.lines {
@@ -58,23 +70,17 @@ impl App {
                                 Outcome::NotYetImported => t.text_dim,
                                 Outcome::DatesDiffer => t.accent_text,
                             };
-                            ui.label(RichText::new(tl!(l.outcome.label())).color(colour));
-                            ui.label(l.feature.as_str());
-                            ui.scope(|ui| {
-                                ui.set_max_width(WHERE_W);
-                                ui.add(Label::new(l.place.as_str()).wrap());
-                            });
-                            ui.scope(|ui| {
-                                ui.set_max_width(WHY_W);
-                                ui.add(Label::new(RichText::new(l.why.as_str()).color(t.text_dim)).wrap());
-                            });
+                            report_cell(ui, result, RichText::new(tl!(l.outcome.label())).color(colour));
+                            report_cell(ui, feature, l.feature.as_str());
+                            report_cell(ui, place, l.place.as_str());
+                            report_cell(ui, reason, RichText::new(l.why.as_str()).color(t.text_dim));
                             ui.end_row();
                         }
                     });
                 });
             }
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 if ui.button(tl!("Copy Report")).on_hover_text(tl!("Copy the report as text")).clicked() {
                     ui.ctx().copy_text(report.text());
                 }
@@ -92,7 +98,7 @@ impl App {
 #[cfg(test)]
 mod tests {
     use egui_kittest::Harness;
-    use egui_kittest::kittest::Queryable;
+    use egui_kittest::kittest::{NodeT, Queryable};
     use projectcraft_engine::Session;
     use projectcraft_engine::model::Project;
 
@@ -160,6 +166,7 @@ mod tests {
         let csv = d.join("Kitchen refit.csv");
         std::fs::write(&csv, KITCHEN).unwrap();
         let mut h = harness();
+        h.set_size(egui::vec2(708.0, 620.0));
         h.state_mut().open_path(&csv);
         h.run_steps(3);
         assert_eq!(h.state().session.project.name, "Kitchen refit");
@@ -169,6 +176,11 @@ mod tests {
         h.get_by_label("Import Report");
         h.get_by_label("Notes column");
         h.run_steps(3);
+        for label in ["Import Report", "Result", "Why", "Copy Report", "Close"] {
+            let node = h.get_by_label(label);
+            let bounds = node.accesskit_node().bounding_box().unwrap();
+            assert!(bounds.x0 >= 0.0 && bounds.x1 <= 708.0 && bounds.y0 >= 0.0 && bounds.y1 <= 620.0, "{label}: {bounds:?}");
+        }
         h.get_by_label("Close").click();
         h.run_steps(3);
         h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::S);
